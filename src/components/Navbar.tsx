@@ -31,13 +31,13 @@ export default function Navbar() {
       >
         {/* Left: Brand */}
         <Link href="/" className="flex items-center">
-          <span className="font-bold text-xl tracking-[0.2em] text-neutral-900">
-            HELA
+          <span className="font-bold text-xl tracking-[0.08em] text-neutral-900">
+            hela<span className="text-[#B7FF00]">.</span>
           </span>
         </Link>
 
         {/* Center: Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-8 xl:gap-10">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
           {['Solución', 'Industrias', 'Tecnología', 'Recursos', 'Contacto'].map((item) => (
             <Link 
               key={item} 
