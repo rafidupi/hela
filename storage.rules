@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() { return request.auth != null; }
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+    function userRole() { return userDoc().data.role; }
+    function hasRole(roles) { return isSignedIn() && userRole() in roles; }
+    function inUserSite(siteId) { return siteId in userDoc().data.siteIds; }
+
+    // Fotos: lectura autenticada por site; escritura solo backend.
+    match /photos/{siteId}/{workerId}/{file} {
+      allow read: if isSignedIn() && inUserSite(siteId);
+      allow write: if hasRole(['admin']);
+    }
+
+    // Thumbnails generados por Cloud Function.
+    match /thumbnails/{siteId}/{workerId}/{file} {
+      allow read: if isSignedIn() && inUserSite(siteId);
+      allow write: if hasRole(['admin']);
+    }
+
+    // Video clips (post-roll de alertas) — lectura por site, escritura backend.
+    match /clips/{siteId}/{workerId}/{file} {
+      allow read: if isSignedIn() && inUserSite(siteId);
+      allow write: if hasRole(['admin']);
+    }
+
+    // Avatars de trabajadores — gerencia gestiona.
+    match /avatars/{siteId}/{workerId}/{file} {
+      allow read: if isSignedIn() && inUserSite(siteId);
+      allow write: if hasRole(['admin', 'manager']);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-surface text-slate-100 antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  :root {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-surface-elevated border border-white/5 rounded-lg shadow-lg;
+  }
+  .panel-muted {
+    @apply bg-surface-muted border border-white/5 rounded-md;
+  }
+}
+
+/* MapLibre ships its own CSS; import it via JS for bundling. */

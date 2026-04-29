@@ -1,0 +1,26 @@
+{
+  "name": "@hela/data-access",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./firebase": "./src/firebase/index.ts",
+    "./firebase-admin": "./src/firebase/admin.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@hela/contracts": "workspace:*",
+    "firebase": "^10.14.1",
+    "firebase-admin": "^12.6.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,28 +1,27 @@
 {
-  "name": "hela-app",
-  "version": "0.1.0",
+  "name": "hela",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+  "version": "0.0.1",
+  "description": "Plataforma de seguridad minera basada en cascos inteligentes (Grandtime H1/H8).",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
   },
-  "dependencies": {
-    "@gsap/react": "^2.1.2",
-    "gsap": "^3.15.0",
-    "next": "16.2.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/*\" build && pnpm -r --filter \"./apps/*\" --filter \"./functions\" build",
+    "dev": "pnpm -r --parallel --filter \"./apps/*\" dev",
+    "dev:landing": "pnpm --filter @hela/landing dev",
+    "dev:dashboard": "pnpm --filter @hela/dashboard dev",
+    "dev:emulator": "pnpm --filter @hela/emulator dev",
+    "firebase:emulators": "firebase emulators:start --import=.firebase-data --export-on-exit",
+    "firebase:deploy": "firebase deploy",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rm -rf dist .next .turbo tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "firebase-tools": "^13.23.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
   }
 }
