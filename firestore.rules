@@ -1,0 +1,109 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers ---------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return userDoc().data.role;
+    }
+
+    function hasRole(roles) {
+      return isSignedIn() && userRole() in roles;
+    }
+
+    function userSites() {
+      return userDoc().data.siteIds;
+    }
+
+    function inUserSite(siteId) {
+      return siteId in userSites();
+    }
+
+    // --- Users -----------------------------------------------------------
+    // Cada usuario ve su doc; solo admin crea/modifica usuarios.
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || hasRole(['admin', 'manager']));
+      allow write: if hasRole(['admin']);
+    }
+
+    // --- Sites, Workers, Crews, Helmets, Geofences -----------------------
+    // Lectura: cualquier usuario autenticado con acceso al site.
+    // Escritura: admin / manager.
+    match /sites/{siteId} {
+      allow read: if isSignedIn() && inUserSite(siteId);
+      allow write: if hasRole(['admin', 'manager']);
+    }
+
+    match /workers/{workerId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow write: if hasRole(['admin', 'manager']);
+    }
+
+    match /crews/{crewId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow write: if hasRole(['admin', 'manager', 'supervisor']);
+    }
+
+    match /helmets/{helmetId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow write: if hasRole(['admin', 'manager']);
+    }
+
+    match /geofences/{geofenceId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow write: if hasRole(['admin', 'manager', 'prevencionista']);
+    }
+
+    // --- Alerts ----------------------------------------------------------
+    // Lectura: todo usuario del site. Creación: solo backend (functions) o admin.
+    // Update: supervisor/prevencionista pueden acknowledge/resolve.
+    match /alerts/{alertId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow create: if hasRole(['admin']); // el emulador autentica como admin
+      allow update: if hasRole(['admin', 'manager', 'supervisor', 'prevencionista'])
+                    && inUserSite(resource.data.siteId);
+      allow delete: if hasRole(['admin']);
+    }
+
+    // --- Photos ----------------------------------------------------------
+    match /photos/{photoId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow create: if hasRole(['admin']);
+      allow update, delete: if hasRole(['admin', 'manager']);
+    }
+
+    // --- Telemetry (subcolección append-only) ----------------------------
+    // Lectura: cualquier usuario del site del casco.
+    // Escritura: solo backend/emulador autenticado como admin.
+    match /helmets/{helmetId}/telemetry/{sampleId} {
+      allow read: if isSignedIn()
+        && inUserSite(get(/databases/$(database)/documents/helmets/$(helmetId)).data.siteId);
+      allow write: if hasRole(['admin']);
+    }
+
+    // --- Agregados (read-only para usuarios) -----------------------------
+    match /exposure_records/{recordId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow write: if hasRole(['admin']); // las Cloud Functions escriben como admin
+    }
+
+    match /worker_daily_stats/{statId} {
+      allow read: if isSignedIn() && inUserSite(resource.data.siteId);
+      allow write: if hasRole(['admin']);
+    }
+
+    // --- Default deny ----------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
