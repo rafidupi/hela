@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-surface text-slate-100 antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  :root {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-surface-elevated border border-white/5 rounded-lg shadow-lg;
+  }
+  .panel-muted {
+    @apply bg-surface-muted border border-white/5 rounded-md;
+  }
+}
+
+/* Push the bottom Mapbox watermark (logo + attribution) right by the sidebar
+   width so it doesn't disappear under the floating sidebar, and raise it so
+   its bottom edge aligns with the sidebar's bottom edge. The shift variable
+   is set inline by <MapView>. The logo and the attribution may render in
+   either bottom-left or bottom-right depending on Mapbox version, so we lift
+   both corners and force the bottom value past Mapbox's defaults. */
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+  transition: transform 200ms ease-out;
+}
+.mapboxgl-ctrl-bottom-left {
+  bottom: 14px !important;
+  /* Pull 12px closer to the sidebar's right edge. */
+  transform: translateX(calc(var(--mapbox-watermark-shift, 0px) - 12px));
+}
+.mapboxgl-ctrl-bottom-right {
+  bottom: 8px !important;
+  /* Same: pull 12px closer to the panel on its left when one is showing. */
+  transform: translateX(calc(-1 * var(--mapbox-attribution-shift, 0px) + 12px));
+}
+
+/* Browsers (Chrome/Safari) override input bg/text colors for autofilled
+   fields with a yellow/blue tint that ignores Tailwind. The `box-shadow`
+   trick paints over their default while keeping our glassy bg visible. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: inherit;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: currentColor;
+}
+
+/* MapLibre ships its own CSS; import it via JS for bundling. */

@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HELA — Plataforma de Seguridad Minera
 
-## Getting Started
+Software chileno para la flota de cascos inteligentes **Grandtime H1 / H8**. Entrega al prevencionista de riesgos y al jefe de turno:
 
-First, run the development server:
+- Ubicación en vivo de cada trabajador en faena.
+- Galería de fotografías tomadas desde el casco.
+- Gráficas de tiempo de exposición por zona de riesgo.
+- Alertas en tiempo real (SOS, hombre caído, casco fuera, alta tensión, salida de geocerca).
+- Analítica de comportamiento para prevenir accidentes.
+- Canal de ayuda inmediata ante un evento.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Estructura
+
+```
+hela/
+├── apps/
+│   ├── landing/        Next.js 16 · Sitio de marketing (puerto 3001 en dev)
+│   ├── dashboard/      Next.js 15 · Web del gerente/prevencionista (puerto 3000)
+│   └── emulator/       Node.js   · Simula cascos H1/H8 hasta que llegue el hardware (jun-2026)
+├── packages/
+│   ├── contracts/      Tipos + Zod schemas compartidos (el "contrato" del casco)
+│   └── data-access/    Interfaces de repositorio + implementación Firebase (swap-able)
+├── functions/          Cloud Functions (agregaciones, geocercas, FCM)
+├── firebase.json       Config de Firestore/Storage/Functions/Hosting
+└── firestore.rules     Reglas de seguridad
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+El landing apunta a `http://localhost:3000/login` (el dashboard) en su botón de "Iniciar sesión" durante desarrollo. En producción se reemplaza por la URL del dominio del dashboard.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Requisitos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 20+
+- pnpm 9+
+- Firebase CLI (`pnpm dlx firebase-tools` o instalación global)
+- Cuenta Firebase (proyecto por definir)
 
-## Learn More
+## Primeros pasos
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm install
+cp .env.example .env.local           # completar claves de Firebase
+pnpm firebase:emulators               # Firestore/Auth/Storage/Functions locales
+pnpm dev:emulator                     # pushea telemetría ficticia
+pnpm dev:dashboard                    # http://localhost:3000  (la web app)
+pnpm dev:landing                      # http://localhost:3001  (el sitio de marketing)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Decisiones arquitectónicas
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Monorepo pnpm + TypeScript estricto.** Un solo `pnpm install`, tipos compartidos entre cliente, servidor y emulador.
+2. **Contracts package como fuente única de verdad.** Zod schema → type → validación runtime. El emulador, las Cloud Functions y el casco real (vía el agente Android) deben cumplir el mismo contrato.
+3. **Data-access abstraído.** Hoy Firebase, mañana Postgres+PostGIS (cuando Codelco exija residencia en Chile). El dashboard no cambia.
+4. **Firebase para MVP.** Firestore (live listeners), Storage (fotos), Auth (email+roles), Functions (agregaciones), Hosting, FCM (push). Emulator Suite para desarrollo sin red.
+5. **Video en vivo fuera de Firebase.** Cuando llegue el hardware real, se introduce MediaMTX (SRT/WebRTC) como servicio aparte. El dashboard consume HLS/WebRTC — Firebase solo guarda metadata y thumbnails.
 
-## Deploy on Vercel
+## Roadmap
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **M0 (hoy → viernes):** emulador + dashboard con mapa en vivo, alertas, galería, gráficas. Datos en Firebase.
+- **M1 (mayo):** Cloud Functions de agregación, geocercas operativas, notificación push supervisor, autenticación por rol.
+- **M2 (junio):** integración con casco H1/H8 real. Servidor MediaMTX. Pruebas de campo.
+- **M3 (Q3 2026):** capa de residencia de datos en Chile (Postgres+PostGIS), integración SERNAGEOMIN, ACHS.
