@@ -9,22 +9,17 @@ interface Props {
 
 export function PlaceholderPage({ title, description, icon: Icon = Construction }: Props) {
   return (
-    <div className="flex-1 flex flex-col">
-      <header className="h-14 shrink-0 border-b border-white/5 flex items-center px-5">
-        <h1 className="text-base font-semibold">{title}</h1>
-      </header>
-      <div className="flex-1 flex items-center justify-center p-10">
-        <div className="max-w-md text-center space-y-3">
-          <div className="inline-flex w-14 h-14 rounded-full bg-brand-600/15 items-center justify-center">
-            <Icon size={28} className="text-brand-500" />
-          </div>
-          <h2 className="text-lg font-medium text-slate-200">{title}</h2>
-          <p className="text-sm text-slate-400">{description}</p>
-          <p className="text-xs text-slate-500">
-            Esta vista se conecta a los mismos datos del Panel General. Está planificada para la iteración
-            posterior al viernes.
-          </p>
+    <div className="relative flex-1 flex items-center justify-center p-10">
+      <div className="max-w-md text-center space-y-4 px-8 py-10 rounded-2xl border border-white/40 bg-white/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_30px_rgba(0,0,0,0.18)] pointer-events-auto">
+        <div className="inline-flex w-14 h-14 rounded-full bg-brand-500/30 items-center justify-center">
+          <Icon size={28} className="text-neutral-900" />
         </div>
+        <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
+        <p className="text-sm text-neutral-700">{description}</p>
+        <p className="text-xs text-neutral-700">
+          Esta vista se conecta a los mismos datos del Panel General. Está planificada para la iteración
+          posterior al viernes.
+        </p>
       </div>
     </div>
   );

@@ -32,10 +32,10 @@ export function ExposureBar({ data }: { data: ExposureBarDatum[] }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-        <CartesianGrid stroke="#1f2937" vertical={false} />
-        <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} />
-        <YAxis stroke="#94a3b8" fontSize={11} label={{ value: 'min', fill: '#94a3b8', fontSize: 10, angle: -90, position: 'insideLeft' }} />
-        <Tooltip contentStyle={{ background: '#111a2e', border: '1px solid #1f2937' }} />
+        <CartesianGrid stroke="#d4d4d4" vertical={false} />
+        <XAxis dataKey="label" stroke="#525252" fontSize={11} />
+        <YAxis stroke="#525252" fontSize={11} label={{ value: 'min', fill: '#525252', fontSize: 10, angle: -90, position: 'insideLeft' }} />
+        <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e5e5e5', color: '#171717' }} />
         {Object.entries(CATEGORY_COLORS).map(([k, color]) => (
           <Bar key={k} dataKey={k} stackId="a" fill={color} />
         ))}

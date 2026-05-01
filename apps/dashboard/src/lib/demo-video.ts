@@ -15,10 +15,13 @@
  * permite en cliente). Archivos deben ser .mp4 H.264 + AAC.
  */
 export const DEMO_VIDEOS: string[] = [
-  // Ejemplo — reemplazar con los nombres reales cuando los dropees:
-  // 'pov-1.mp4',
-  // 'pov-2.mp4',
-  // 'pov-3.mp4',
+  'mining-cave-1.mp4',
+  'mining-cave-2.mp4',
+  'mining-feed-1.mp4',
+  'mining-feed-2.mp4',
+  'mining-pov-1.mp4',
+  'mining-pov-2.mp4',
+  'machine-pov-1.mp4',
 ];
 
 function hashString(s: string): number {

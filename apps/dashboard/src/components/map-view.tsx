@@ -16,6 +16,16 @@ interface MapViewProps {
   geofences: Geofence[];
   selectedHelmetId: string | null;
   onSelectHelmet?: (helmetId: string | null) => void;
+  /**
+   * px to push the bottom-left Mapbox controls (logo + attribution) so they
+   * clear the floating sidebar instead of disappearing under it.
+   */
+  watermarkLeftOffset?: number;
+  /**
+   * px to lift the bottom-right attribution button leftward, so it doesn't
+   * disappear under panels pinned to the right (worker drawer, side rail).
+   */
+  attributionRightOffset?: number;
 }
 
 export type LightPreset = 'day' | 'dusk' | 'dawn' | 'night';
@@ -80,6 +90,8 @@ export function MapView({
   geofences,
   selectedHelmetId,
   onSelectHelmet,
+  watermarkLeftOffset = 0,
+  attributionRightOffset = 0,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MBMap | null>(null);
@@ -104,6 +116,7 @@ export function MapView({
       zoom,
       attributionControl: false,
     });
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     loadedStyleUrlRef.current = currentStyle.styleUrl;
     const onLoad = () => {
@@ -176,7 +189,13 @@ export function MapView({
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative h-full w-full"
+      style={{
+        ['--mapbox-watermark-shift' as string]: `${watermarkLeftOffset}px`,
+        ['--mapbox-attribution-shift' as string]: `${attributionRightOffset}px`,
+      }}
+    >
       <div ref={containerRef} className="h-full w-full" />
 
       {/* Style pill switcher — inactive items show icon only; active reveals its label. */}
@@ -214,7 +233,7 @@ const INACTIVE_WIDTH = 40;
 
 function StylePill({ activeId, onPick }: { activeId: string; onPick: (id: string) => void }) {
   return (
-    <div className="panel flex items-center gap-1 p-1 rounded-full shadow-xl backdrop-blur-md bg-surface-elevated/90">
+    <div className="flex items-center gap-1 p-1 rounded-full bg-white/20 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
       {MAP_STYLES.map((s) => {
         const Icon = s.icon;
         const active = s.id === activeId;
@@ -230,8 +249,8 @@ function StylePill({ activeId, onPick }: { activeId: string; onPick: (id: string
               'text-xs font-medium overflow-hidden',
               'transition-[width,background-color,color] duration-300 ease-out',
               active
-                ? 'bg-brand-600/20 text-brand-500'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5',
+                ? 'bg-brand-500/30 text-neutral-900'
+                : 'text-neutral-700 hover:text-neutral-900 hover:bg-black/5',
             )}
           >
             <Icon size={16} className="shrink-0" />
@@ -346,7 +365,7 @@ function syncWorkers(map: MBMap, positions: LivePosition[], selectedHelmetId: st
         helmetId: p.helmetId,
         workerId: p.workerId,
         color:
-          p.connectivity === 'offline' ? '#64748b' : p.batteryPct < 20 ? '#f43f5e' : '#22c55e',
+          p.connectivity === 'offline' ? '#64748b' : p.batteryPct < 20 ? '#f43f5e' : '#b7ff00',
         selected: p.helmetId === selectedHelmetId,
       },
       geometry: { type: 'Point', coordinates: [p.lng, p.lat] },

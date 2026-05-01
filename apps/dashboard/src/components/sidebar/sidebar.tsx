@@ -1,26 +1,26 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useState } from 'react';
 import clsx from 'clsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { FOOTER_ITEMS, NAV_GROUPS } from './nav-config';
+import { useAppData } from '@/app/(app)/layout';
+import { NAV_GROUPS } from './nav-config';
 import { NavItem } from './nav-item';
 
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const { sidebarCollapsed: collapsed, setSidebarCollapsed: setCollapsed } = useAppData();
 
-  const isActive = (href: string) => {
+  const isActive = (href: string | undefined) => {
+    if (!href) return false;
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname === href || pathname.startsWith(href + '/');
   };
 
-  async function handleAction(action: 'home' | 'logout') {
-    if (action === 'home') router.push('/dashboard');
+  async function handleNavAction(action: 'logout') {
     if (action === 'logout') {
       await logout();
       router.replace('/login');
@@ -30,25 +30,25 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        'shrink-0 h-full flex flex-col border-r border-white/5 bg-surface-elevated',
+        'absolute left-4 top-4 bottom-4 z-30 flex flex-col rounded-2xl border border-white/40 bg-white/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_30px_rgba(0,0,0,0.18)] overflow-hidden',
         'transition-[width] duration-200 ease-out',
         collapsed ? 'w-[72px]' : 'w-64',
       )}
     >
       {/* Header: brand mark + collapse toggle */}
-      <div className={clsx('flex items-center px-4 py-5 border-b border-white/5', collapsed ? 'justify-center px-2' : 'justify-between')}>
+      <div className={clsx('flex items-center px-4 py-3 border-b border-white/40', collapsed ? 'justify-center px-2' : 'justify-between')}>
         {collapsed ? (
-          <span className="text-lg font-bold tracking-[0.08em]">
+          <span className="text-lg font-bold tracking-[0.08em] text-neutral-900">
             h<span className="text-brand-500">.</span>
           </span>
         ) : (
           <>
-            <span className="text-lg font-bold tracking-[0.08em]">
+            <span className="text-lg font-bold tracking-[0.08em] text-neutral-900">
               hela<span className="text-brand-500">.</span>
             </span>
             <button
               onClick={() => setCollapsed(true)}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-neutral-600 hover:text-neutral-900 transition-colors"
               aria-label="Colapsar menú"
             >
               <ChevronLeft size={18} />
@@ -61,76 +61,58 @@ export function Sidebar() {
       {collapsed && (
         <button
           onClick={() => setCollapsed(false)}
-          className="mx-auto my-2 text-slate-400 hover:text-white"
+          className="mx-auto my-2 text-neutral-600 hover:text-neutral-900"
           aria-label="Expandir menú"
         >
           <ChevronRight size={18} />
         </button>
       )}
 
-      {/* User card */}
-      {user && (
-        <div className={clsx('px-3 pt-3', collapsed && 'px-2')}>
+      {/* Scroll area: user card + nav groups scroll together; header stays fixed. */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        {user && (
           <div
             className={clsx(
-              'panel-muted flex items-center gap-3',
+              'bg-white/30 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 rounded-xl flex items-center gap-3',
               collapsed ? 'justify-center p-2' : 'p-3',
             )}
           >
-            <div className="w-8 h-8 rounded-full bg-white/10 ring-1 ring-white/15 flex items-center justify-center shrink-0 text-sm font-semibold text-white">
+            <div className="w-8 h-8 rounded-full bg-neutral-900/10 ring-1 ring-neutral-900/15 flex items-center justify-center shrink-0 text-sm font-semibold text-neutral-900">
               {(user.displayName ?? user.email ?? '?').slice(0, 1).toUpperCase()}
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{user.displayName ?? user.email}</p>
-                <p className="text-[11px] text-slate-400 truncate">Prevencionista</p>
+                <p className="text-sm font-medium truncate text-neutral-900">{user.displayName ?? user.email}</p>
+                <p className="text-[11px] text-neutral-700 truncate">Prevencionista</p>
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.id} className="panel-muted p-1">
-            {!collapsed && group.title && (
-              <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
-                {group.title}
-              </p>
-            )}
-            <div className="flex flex-col gap-0.5">
-              {group.items.map((item) => (
-                <NavItem key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div className="px-3 pb-3 pt-2 border-t border-white/5 space-y-0.5">
-        {FOOTER_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.action}
-              onClick={() => handleAction(item.action)}
-              className={clsx(
-                'w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
-                collapsed && 'justify-center',
-                item.tone === 'danger'
-                  ? 'text-severity-critical hover:bg-severity-critical/10'
-                  : 'text-slate-300 hover:bg-white/5 hover:text-white',
+        <nav className="space-y-4">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.id} className="bg-white/30 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 rounded-xl p-1">
+              {!collapsed && group.title && (
+                <p className="px-3 pt-2 pb-1 text-[10px] font-mono uppercase tracking-widest text-neutral-700 font-semibold">
+                  {group.title}
+                </p>
               )}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </button>
-          );
-        })}
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <NavItem
+                    key={item.href ?? item.label}
+                    item={item}
+                    active={isActive(item.href)}
+                    collapsed={collapsed}
+                    onAction={handleNavAction}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
       </div>
+
     </aside>
   );
 }

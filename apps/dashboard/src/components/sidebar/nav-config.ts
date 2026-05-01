@@ -4,23 +4,24 @@ import {
   Clock,
   Cog,
   FileText,
-  Globe,
   HardHat,
   LayoutDashboard,
   LogOut,
   MapPin,
   Radar,
   ShieldAlert,
-  UserCircle2,
   Users,
   Video,
 } from 'lucide-react';
 
 export interface NavItemDef {
-  href: string;
+  href?: string;
   label: string;
   icon: LucideIcon;
   badge?: 'live' | number;
+  /** When set, the item acts as a button instead of a link. */
+  action?: 'logout';
+  tone?: 'default' | 'danger';
 }
 
 export interface NavGroupDef {
@@ -38,6 +39,7 @@ export interface NavGroupDef {
 export const NAV_GROUPS: NavGroupDef[] = [
   {
     id: 'monitoreo',
+    title: 'General',
     items: [
       { href: '/dashboard', label: 'Panel General', icon: LayoutDashboard },
       { href: '/mapa', label: 'Mapa en Vivo', icon: MapPin },
@@ -67,8 +69,8 @@ export const NAV_GROUPS: NavGroupDef[] = [
     id: 'admin',
     title: 'Administración',
     items: [
-      { href: '/usuarios', label: 'Usuarios', icon: UserCircle2 },
       { href: '/configuracion', label: 'Configuración', icon: Cog },
+      { label: 'Cerrar sesión', icon: LogOut, action: 'logout', tone: 'danger' },
     ],
   },
 ];
@@ -80,7 +82,4 @@ export interface FooterItemDef {
   action: 'home' | 'logout';
 }
 
-export const FOOTER_ITEMS: FooterItemDef[] = [
-  { label: 'Ir al inicio', icon: Globe, tone: 'default', action: 'home' },
-  { label: 'Cerrar sesión', icon: LogOut, tone: 'danger', action: 'logout' },
-];
+export const FOOTER_ITEMS: FooterItemDef[] = [];

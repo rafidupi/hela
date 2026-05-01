@@ -2,40 +2,24 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ArrowLeft,
   Camera,
   MessageCircle,
   Mic,
   Video,
   VideoOff,
   Volume2,
-  X,
 } from 'lucide-react';
+import clsx from 'clsx';
 import type { Helmet, Worker } from '@hela/contracts';
-import { useAuth } from '@/hooks/use-auth';
-import { useCurrentSiteId } from '@/hooks/use-site';
-import { useSubscribable } from '@/hooks/use-subscribable';
-import { getDataAccess } from '@/lib/data-access';
 import { getDemoVideoUrlForHelmet } from '@/lib/demo-video';
 import { relativeTime } from '@/lib/format';
+import { useAppData } from '../layout';
+
+const TRANSITION_MS = 320;
 
 export default function CamerasPage() {
-  const { user } = useAuth();
-  const siteId = useCurrentSiteId();
-  const da = getDataAccess();
-  const userKey = user?.uid ?? '';
-
-  const { value: workers } = useSubscribable<Worker[]>(
-    () => (user ? da.workers.watchActiveBySite(siteId) : null),
-    [userKey, siteId],
-    [],
-  );
-  const { value: helmets } = useSubscribable<Helmet[]>(
-    () => (user ? da.helmets.watchBySite(siteId) : null),
-    [userKey, siteId],
-    [],
-  );
-
-  const helmetsById = useMemo(() => new Map(helmets.map((h) => [h.id, h])), [helmets]);
+  const { workers, helmetsById, contentLeftOffset } = useAppData();
 
   const feeds = useMemo(() => {
     return workers
@@ -47,8 +31,27 @@ export default function CamerasPage() {
       .filter((f): f is { worker: Worker; helmet: Helmet } => !!f.helmet);
   }, [workers, helmetsById]);
 
+  const onlineCount = feeds.filter((f) => f.helmet.connectivity === 'online').length;
+
   const [expandedHelmetId, setExpandedHelmetId] = useState<string | null>(null);
-  const expanded = expandedHelmetId ? feeds.find((f) => f.helmet.id === expandedHelmetId) : null;
+  // Keep the last feed mounted while the expanded view fades out, so the user
+  // sees a smooth crossfade instead of an abrupt swap.
+  const [lingeringFeed, setLingeringFeed] = useState<{ worker: Worker; helmet: Helmet } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (expandedHelmetId) {
+      const f = feeds.find((x) => x.helmet.id === expandedHelmetId);
+      if (f) setLingeringFeed(f);
+      return;
+    }
+    if (!lingeringFeed) return;
+    const t = setTimeout(() => setLingeringFeed(null), TRANSITION_MS);
+    return () => clearTimeout(t);
+  }, [expandedHelmetId, feeds, lingeringFeed]);
+
+  const isExpanded = !!expandedHelmetId;
 
   // Cerrar con ESC.
   useEffect(() => {
@@ -61,34 +64,189 @@ export default function CamerasPage() {
   }, [expandedHelmetId]);
 
   return (
-    <>
-      <div className="flex-1 overflow-y-auto p-5">
-        {feeds.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-sm text-slate-400">
-            Sin cámaras disponibles.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-            {feeds.map(({ worker, helmet }) => (
-              <CameraTile
-                key={helmet.id}
-                worker={worker}
-                helmet={helmet}
-                onExpand={() => setExpandedHelmetId(helmet.id)}
+    <div className="relative flex-1 min-h-0">
+      {/* One wide floating glass card containing every camera */}
+      <section
+        style={{ left: contentLeftOffset, transition: 'left 200ms ease-out' }}
+        className="absolute top-4 right-4 bottom-4 z-10 flex flex-col rounded-2xl border border-white/40 bg-white/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_30px_rgba(0,0,0,0.18)] overflow-hidden pointer-events-auto"
+      >
+        {/* Header — both variants stack and crossfade */}
+        <div className="relative shrink-0 h-[72px] border-b border-white/40">
+          <header
+            className={clsx(
+              'absolute inset-0 flex items-center justify-between px-6 transition-opacity ease-out',
+              isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100',
+            )}
+            style={{ transitionDuration: `${TRANSITION_MS}ms` }}
+          >
+            <div>
+              <h1 className="text-lg font-semibold text-neutral-900">Cámaras en vivo</h1>
+              <p className="text-[11px] font-mono uppercase tracking-widest text-neutral-700 mt-0.5">
+                {onlineCount} de {feeds.length} en línea
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Transmisión en tiempo real</span>
+            </div>
+          </header>
+
+          {lingeringFeed && (
+            <div
+              className={clsx(
+                'absolute inset-0 transition-opacity ease-out',
+                isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none',
+              )}
+              style={{ transitionDuration: `${TRANSITION_MS}ms` }}
+            >
+              <ExpandedHeader
+                worker={lingeringFeed.worker}
+                helmet={lingeringFeed.helmet}
+                onBack={() => setExpandedHelmetId(null)}
               />
-            ))}
+            </div>
+          )}
+        </div>
+
+        {/* Body — both variants stack and crossfade */}
+        <div className="relative flex-1 min-h-0">
+          <div
+            className={clsx(
+              'absolute inset-0 overflow-y-auto p-5 transition-opacity ease-out',
+              isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100',
+            )}
+            style={{ transitionDuration: `${TRANSITION_MS}ms` }}
+          >
+            {feeds.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-neutral-700">
+                Sin cámaras disponibles.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {feeds.map(({ worker, helmet }) => (
+                  <CameraTile
+                    key={helmet.id}
+                    worker={worker}
+                    helmet={helmet}
+                    onExpand={() => setExpandedHelmetId(helmet.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {lingeringFeed && (
+            <div
+              className={clsx(
+                'absolute inset-0 transition-[opacity,transform] ease-out origin-center',
+                isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.97] pointer-events-none',
+              )}
+              style={{ transitionDuration: `${TRANSITION_MS}ms` }}
+            >
+              <ExpandedBody worker={lingeringFeed.worker} helmet={lingeringFeed.helmet} />
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ExpandedHeader({
+  worker,
+  helmet,
+  onBack,
+}: {
+  worker: Worker;
+  helmet: Helmet;
+  onBack: () => void;
+}) {
+  return (
+    <header className="h-full flex items-center justify-between gap-4 px-6">
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={onBack}
+          aria-label="Volver a la grilla"
+          className="w-9 h-9 shrink-0 rounded-full bg-white/30 hover:bg-white/50 border border-white/40 flex items-center justify-center text-neutral-900 transition"
+        >
+          <ArrowLeft size={16} />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold text-neutral-900 truncate">
+            {worker.firstName} {worker.lastName}
+          </h1>
+          <p className="text-[11px] font-mono uppercase tracking-widest text-neutral-700 mt-0.5 truncate">
+            {worker.role.replace(/_/g, ' ')} · Turno {worker.shift} · Casco {helmet.model} · {helmet.serialNumber}
+          </p>
+        </div>
+      </div>
+      <div className="text-right text-[11px] text-neutral-700 shrink-0">
+        <p>Batería {helmet.lastBatteryPct != null ? `${Math.round(helmet.lastBatteryPct)}%` : '—'}</p>
+        <p>{helmet.lastSeenAt ? relativeTime(helmet.lastSeenAt) : 'sin señal'}</p>
+      </div>
+    </header>
+  );
+}
+
+function ExpandedBody({ worker: _worker, helmet }: { worker: Worker; helmet: Helmet }) {
+  const online = helmet.connectivity === 'online';
+  const videoUrl = online ? getDemoVideoUrlForHelmet(helmet.id) : null;
+  return (
+    <div className="h-full flex flex-col">
+      {/* Big video */}
+      <div className="flex-1 min-h-0 px-6 pt-5 pb-4 flex items-center justify-center">
+        <div className="relative w-full h-full rounded-xl overflow-hidden bg-black ring-1 ring-black/20">
+          {online ? (
+            videoUrl ? (
+              <video
+                src={videoUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex items-center justify-center">
+                <Video size={64} className="text-slate-700" />
+              </div>
+            )
+          ) : (
+            <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 text-slate-500">
+              <VideoOff size={48} />
+              <p className="text-sm">Sin señal</p>
+            </div>
+          )}
+
+          <span
+            className={clsx(
+              'absolute top-4 left-4 flex items-center gap-2 px-3 py-1 rounded bg-black/60 backdrop-blur text-xs font-semibold uppercase tracking-wide',
+              online ? 'text-brand-500' : 'text-severity-critical',
+            )}
+          >
+            <span
+              className={clsx(
+                'w-2 h-2 rounded-full',
+                online ? 'bg-brand-500 animate-pulse' : 'bg-severity-critical',
+              )}
+            />
+            {online ? 'En vivo' : 'Desconectado'}
+          </span>
+
+          <span className="absolute top-4 right-4 px-2 py-1 rounded bg-black/60 backdrop-blur text-xs font-mono text-white">
+            {helmet.model}
+          </span>
+        </div>
       </div>
 
-      {expanded && (
-        <ExpandedFeed
-          worker={expanded.worker}
-          helmet={expanded.helmet}
-          onClose={() => setExpandedHelmetId(null)}
-        />
-      )}
-    </>
+      {/* Action bar — placeholders. Funcionales cuando llegue el hardware + MediaMTX. */}
+      <div className="shrink-0 flex items-center justify-center gap-3 pb-5">
+        <ActionButton icon={Mic} label="Hablar (PTT)" />
+        <ActionButton icon={Volume2} label="Escuchar" />
+        <ActionButton icon={Camera} label="Capturar foto" />
+        <ActionButton icon={MessageCircle} label="Enviar mensaje" />
+      </div>
+    </div>
   );
 }
 
@@ -104,7 +262,7 @@ function CameraTile({ worker, helmet, onExpand }: TileProps) {
   return (
     <article
       onClick={onExpand}
-      className="panel overflow-hidden flex flex-col cursor-pointer hover:ring-2 hover:ring-brand-500/40 transition"
+      className="bg-white/30 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 rounded-xl overflow-hidden flex flex-col cursor-pointer hover:ring-2 hover:ring-brand-500/50 transition"
     >
       <div className="relative aspect-video bg-black flex items-center justify-center">
         {online ? (
@@ -129,12 +287,20 @@ function CameraTile({ worker, helmet, onExpand }: TileProps) {
           </div>
         )}
 
-        {online && (
-          <span className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/60 backdrop-blur text-[10px] font-semibold text-severity-critical uppercase tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-severity-critical animate-pulse" />
-            En vivo
-          </span>
-        )}
+        <span
+          className={clsx(
+            'absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/60 backdrop-blur text-[10px] font-semibold uppercase tracking-wide',
+            online ? 'text-brand-500' : 'text-severity-critical',
+          )}
+        >
+          <span
+            className={clsx(
+              'w-1.5 h-1.5 rounded-full',
+              online ? 'bg-brand-500 animate-pulse' : 'bg-severity-critical',
+            )}
+          />
+          {online ? 'En vivo' : 'Desconectado'}
+        </span>
 
         <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur text-[10px] font-mono text-white">
           {helmet.model}
@@ -144,125 +310,24 @@ function CameraTile({ worker, helmet, onExpand }: TileProps) {
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium truncate text-neutral-900">
               {worker.firstName} {worker.lastName}
             </p>
-            <p className="text-[11px] text-slate-400 truncate">
+            <p className="text-[11px] text-neutral-700 truncate">
               {worker.role.replace(/_/g, ' ')} · Turno {worker.shift}
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-neutral-900">
               {helmet.lastBatteryPct != null ? `${Math.round(helmet.lastBatteryPct)}%` : '—'}
             </p>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-neutral-700">
               {helmet.lastSeenAt ? relativeTime(helmet.lastSeenAt) : 'sin señal'}
             </p>
           </div>
         </div>
       </div>
     </article>
-  );
-}
-
-interface ExpandedProps {
-  worker: Worker;
-  helmet: Helmet;
-  onClose: () => void;
-}
-
-function ExpandedFeed({ worker, helmet, onClose }: ExpandedProps) {
-  const online = helmet.connectivity === 'online';
-  const videoUrl = online ? getDemoVideoUrlForHelmet(helmet.id) : null;
-  return (
-    <div
-      className="absolute inset-0 z-40 bg-black/90 backdrop-blur-sm flex flex-col"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      {/* Header */}
-      <header
-        onClick={(e) => e.stopPropagation()}
-        className="shrink-0 flex items-center justify-between px-6 py-4"
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-base font-semibold">
-            {worker.firstName.slice(0, 1)}
-            {worker.lastName.slice(0, 1)}
-          </div>
-          <div>
-            <p className="text-base font-medium">
-              {worker.firstName} {worker.lastName}
-            </p>
-            <p className="text-xs text-slate-400">
-              {worker.role.replace(/_/g, ' ')} · Turno {worker.shift} · Casco {helmet.model} · {helmet.serialNumber}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right text-xs text-slate-400">
-            <p>Batería {helmet.lastBatteryPct != null ? `${Math.round(helmet.lastBatteryPct)}%` : '—'}</p>
-            <p>{helmet.lastSeenAt ? relativeTime(helmet.lastSeenAt) : 'sin señal'}</p>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </header>
-
-      {/* Video area */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex-1 min-h-0 px-6 pb-4 flex items-center justify-center"
-      >
-        <div className="relative w-full max-w-[1400px] aspect-video rounded-xl overflow-hidden bg-black ring-1 ring-white/10">
-          {online ? (
-            videoUrl ? (
-              <video
-                src={videoUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex items-center justify-center">
-                <Video size={64} className="text-slate-700" />
-              </div>
-            )
-          ) : (
-            <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 text-slate-500">
-              <VideoOff size={48} />
-              <p className="text-sm">Sin señal</p>
-            </div>
-          )}
-
-          {online && (
-            <span className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 rounded bg-black/60 backdrop-blur text-xs font-semibold text-severity-critical uppercase tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-severity-critical animate-pulse" />
-              En vivo
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Action bar — placeholders. Funcionales cuando llegue el hardware + MediaMTX. */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="shrink-0 flex items-center justify-center gap-3 pb-6"
-      >
-        <ActionButton icon={Mic} label="Hablar (PTT)" />
-        <ActionButton icon={Volume2} label="Escuchar" />
-        <ActionButton icon={Camera} label="Capturar foto" />
-        <ActionButton icon={MessageCircle} label="Enviar mensaje" />
-      </div>
-    </div>
   );
 }
 
@@ -275,7 +340,7 @@ function ActionButton({
 }) {
   return (
     <button
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-sm text-slate-200 transition"
+      className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/30 hover:bg-white/50 border border-white/40 text-sm text-neutral-900 transition"
       title={label}
     >
       <Icon size={16} />

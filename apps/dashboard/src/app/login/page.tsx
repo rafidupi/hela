@@ -74,7 +74,7 @@ export default function LoginPage() {
         }}
       />
 
-      <div className="relative w-full max-w-6xl rounded-[28px] bg-[#FAFAF8]/75 backdrop-blur-2xl backdrop-saturate-75 ring-1 ring-white/20 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.06)] overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+      <div className="relative w-full max-w-6xl rounded-2xl bg-white/20 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.18)] overflow-hidden grid grid-cols-1 lg:grid-cols-2">
         {/* ── Left: form ───────────────────────────────────────── */}
         <div className="px-8 sm:px-14 py-12 sm:py-16 flex flex-col">
           {/* Brand */}
@@ -88,7 +88,7 @@ export default function LoginPage() {
           <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-neutral-900 mb-3">
             Iniciar sesión
           </h1>
-          <p className="text-sm text-neutral-700 mb-10">
+          <p className="text-sm text-neutral-900 mb-10">
             Bienvenido de vuelta. Ingresa tus credenciales para continuar.
           </p>
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
             className="space-y-4"
           >
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-700 mb-2">
+              <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-900 mb-2">
                 Correo
               </label>
               <input
@@ -111,19 +111,19 @@ export default function LoginPage() {
                 placeholder="tu@empresa.cl"
                 required
                 autoComplete="email"
-                className="w-full h-12 px-4 rounded-xl bg-white/70 backdrop-blur-sm border border-white/60 text-neutral-900 placeholder:text-neutral-500 outline-none focus:bg-white focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/5 transition"
+                className="w-full h-12 px-4 rounded-xl bg-white/30 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 text-neutral-900 placeholder:text-neutral-600 outline-none focus:bg-white/60 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10 transition"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-700">
+                <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-900">
                   Contraseña
                 </label>
                 <button
                   type="button"
                   disabled={pending !== null}
-                  className="text-[11px] font-medium text-neutral-700 hover:text-neutral-900 transition disabled:opacity-50"
+                  className="text-[11px] font-medium text-neutral-900 hover:text-neutral-900 transition disabled:opacity-50"
                   onClick={() => void onResetPassword()}
                 >
                   {pending === 'reset' ? 'Enviando…' : '¿Olvidaste tu contraseña?'}
@@ -136,7 +136,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full h-12 pl-4 pr-12 rounded-xl bg-white/70 backdrop-blur-sm border border-white/60 text-neutral-900 placeholder:text-neutral-500 outline-none focus:bg-white focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/5 transition"
+                  className="w-full h-12 pl-4 pr-12 rounded-xl bg-white/30 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 text-neutral-900 placeholder:text-neutral-600 outline-none focus:bg-white/60 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10 transition"
                 />
                 <button
                   type="button"
@@ -172,11 +172,11 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-4 my-8">
-            <div className="flex-1 h-px bg-neutral-300" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-700">
+            <div className="flex-1 h-px bg-neutral-400/60" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-900">
               o continuar con
             </span>
-            <div className="flex-1 h-px bg-neutral-300" />
+            <div className="flex-1 h-px bg-neutral-400/60" />
           </div>
 
           {/* Social */}
@@ -199,7 +199,7 @@ export default function LoginPage() {
             </SocialButton>
           </div>
 
-          <p className="mt-auto pt-10 text-xs text-neutral-700">
+          <p className="mt-auto pt-10 text-xs text-neutral-900">
             ¿Problemas para acceder? Contacta a tu administrador.
           </p>
         </div>
@@ -278,7 +278,7 @@ function SocialButton({
       aria-label={`Continuar con ${label}`}
       disabled={disabled}
       onClick={onClick}
-      className="h-14 w-20 sm:w-24 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-400 hover:shadow-md flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed"
+      className="h-14 w-20 sm:w-24 rounded-2xl bg-white/30 backdrop-blur-2xl backdrop-saturate-150 border border-white/40 hover:bg-white/50 hover:border-white/60 flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed"
     >
       {loading ? <Spinner /> : children}
     </button>
