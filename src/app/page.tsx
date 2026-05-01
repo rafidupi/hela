@@ -1,6 +1,7 @@
 import HeroScroll from "@/components/HeroScroll";
 import Navbar from "@/components/Navbar";
 import ClaritySection from "@/components/ClaritySection";
+import ProblemSection from "@/components/ProblemSection";
 
 export default function Home() {
   return (
@@ -12,6 +13,9 @@ export default function Home() {
 
       {/* Section 2: Post-hero clarity statement */}
       <ClaritySection />
+
+      {/* Section 3: The problem */}
+      <ProblemSection />
     </main>
   );
 }

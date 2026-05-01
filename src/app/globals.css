@@ -18,3 +18,13 @@ body {
 html {
   overscroll-behavior: none;
 }
+
+/* Slow Ken Burns drift for surveillance-style imagery */
+@keyframes slowDrift {
+  0% {
+    transform: scale(1.08) translate(0%, 0%);
+  }
+  100% {
+    transform: scale(1.14) translate(-2%, -1.5%);
+  }
+}
