@@ -52,7 +52,7 @@ export default function Navbar() {
         {/* Right: CTA & Mobile Menu */}
         <div className="flex items-center gap-4">
           <a
-            href="http://localhost:3000/login"
+            href="http://localhost:3001/login"
             className="hidden sm:inline-flex items-center justify-center bg-[#B7FF00] hover:bg-[#a3e600] text-neutral-950 text-[11px] font-bold uppercase tracking-wider px-6 h-[42px] rounded-full transition-colors duration-300"
           >
             Iniciar sesión
